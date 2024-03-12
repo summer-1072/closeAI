@@ -1,5 +1,4 @@
 # OpenAI
-license: ""
 gpt_3.5_turbo: "gpt-3.5-turbo-0125" # 16K
 gpt_4_turbo: "gpt-4-0125-preview" # 128K
 embedding_model_small: "text-embedding-3-small"
