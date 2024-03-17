@@ -1,46 +1,33 @@
 import os
-
 import whisper
-from base.document import Media
+from openai import OpenAI
 
 
 class Whisper:
-    def __init__(self, name, device):
-        self.model = whisper.load_model(name, device)
+    def __init__(self, model_name, device):
+        super().__init__()
+        self.model = whisper.load_model(model_name, device)
 
     def __call__(self, file_path):
-        return self.model.transcribe(file_path)['text']
+        result = self.model.transcribe(file_path)
+        language, segments = result['language'], result['segments']
+
+        fragments = []
+        for segment in segments:
+            fragments.append([segment['end'] - segment['start'], segment['text']])
+
+        return language, fragments
 
 
-# model = Whisper('large', 'cpu')
+class GPT:
+    def __init__(self, license):
+        super().__init__()
+        self.license = license
+        self.client = OpenAI()
 
-
-def transcribe_audio(audio_path):
-    # 加载模型
-    model = whisper.load_model("base")  # 你可以根据需要选择不同大小的模型
-
-    # 处理音频并获取结果
-    result = model.transcribe(audio_path, verbose=True)
-
-    # 打印识别的语言
-    print("Detected language:", result["language"])
-
-    # 打印按秒分割的转录文本
-    # Whisper 自动提供包含时间戳的segments
-    for segment in result["segments"]:
-        start = segment["start"]
-        end = segment["end"]
-        text = segment["text"]
-        print(f"{start}-{end} seconds: {text}")
-
-# media = Media()
-# media.video2audio('/Users/kaiwang/Downloads/demo/video/demo.mp4',
-#                   '/Users/kaiwang/Downloads/demo/mp3/demo.mp3')
-# media.split_audio('/Users/kaiwang/Downloads/demo/mp3/demo.mp3',
-#                   '/Users/kaiwang/Downloads/demo/paragraph', 30000, 5000)
-
-for file in sorted(os.listdir('/Users/kaiwang/Downloads/demo/paragraph')):
-    if 'mp3' in file:
-        print(file)
-        transcribe_audio(os.path.join('/Users/kaiwang/Downloads/demo/paragraph', file))
-        # text = model(os.path.join('/Users/kaiwang/Downloads/demo/paragraph', file))
+    def __call__(self, model_name, prompt, text):
+        response = self.client.completions.create(
+            model=model_name,
+            prompt=prompt,
+            # messages
+        )

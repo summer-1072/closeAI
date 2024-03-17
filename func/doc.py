@@ -1,9 +1,12 @@
 import re
+import librosa
+import soundfile
 import pdfplumber
+import noisereduce
 from docx import Document
+from opencc import OpenCC
 from moviepy.editor import *
 from pydub import AudioSegment
-from opencc import OpenCC
 
 
 class Text:
@@ -71,3 +74,8 @@ class Media:
 
         for i, chunk in enumerate(chunks):
             chunk.export(os.path.join(out_path, f"chunk_{i}.{'mp3'}"))
+
+    def reduce_noise(self, in_path, out_path, prop_decrease):
+        audio, sample_ratio = librosa.load(in_path, sr=None)
+        audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=prop_decrease)
+        soundfile.write(out_path, audio, sample_ratio)
