@@ -7,7 +7,8 @@ embedding_model_small: "text-embedding-3-small"
 embedding_model_large: "text-embedding-3-large"
 
 # Whisper
-# tiny base small medium large
+# base small medium(38s) large(54s)
+
 model_name: "small"
 
 # Google

@@ -63,19 +63,18 @@ class Media:
         audio.close()
         video.close()
 
-    def split_audio(self, in_path, out_path, length, overlap):
+    def slice_audio(self, in_path, out_path, slice, overlap):
         audio = AudioSegment.from_file(in_path)
-        size = length - overlap
+        step = slice - overlap
         chunks = []
-
-        for i in range(0, len(audio), size):
-            chunk = audio[i:i + length]
+        for i in range(0, len(audio), step):
+            chunk = audio[i:i + slice]
             chunks.append(chunk)
 
         for i, chunk in enumerate(chunks):
             chunk.export(os.path.join(out_path, f"chunk_{i}.{'mp3'}"))
 
-    def reduce_noise(self, in_path, out_path, prop_decrease):
+    def reduce_noise(self, in_path, out_path, noise_reduce_ratio):
         audio, sample_ratio = librosa.load(in_path, sr=None)
-        audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=prop_decrease)
+        audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=noise_reduce_ratio)
         soundfile.write(out_path, audio, sample_ratio)

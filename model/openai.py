@@ -14,7 +14,7 @@ class Whisper:
 
         fragments = []
         for segment in segments:
-            fragments.append([segment['end'] - segment['start'], segment['text']])
+            fragments.append(segment['text'])
 
         return language, fragments
 
