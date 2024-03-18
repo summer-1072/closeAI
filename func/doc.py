@@ -74,7 +74,7 @@ class Media:
         for i, chunk in enumerate(chunks):
             chunk.export(os.path.join(out_path, f"chunk_{i}.{'mp3'}"))
 
-    def reduce_noise(self, in_path, out_path, noise_reduce_ratio):
+    def reduce_noise(self, in_path, out_path):
         audio, sample_ratio = librosa.load(in_path, sr=None)
-        audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=noise_reduce_ratio)
+        audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=0.6)
         soundfile.write(out_path, audio, sample_ratio)
