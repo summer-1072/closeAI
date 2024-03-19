@@ -6,17 +6,13 @@ import noisereduce
 from docx import Document
 from opencc import OpenCC
 from moviepy.editor import *
+from langdetect import detect
 from pydub import AudioSegment
 
 
-class Text:
-    def __init__(self, stop_word_path):
+class HandleText:
+    def __init__(self):
         super().__init__()
-
-        self.stop_words = []
-        with open(stop_word_path, 'r') as file:
-            for word in file:
-                self.stop_words.append(word.strip())
 
     def read_text(self, file_path):
         text = ''
@@ -40,18 +36,28 @@ class Text:
 
         return text
 
-    def filter_text(self, text):
-        pattern = f"[{re.escape(''.join(self.stop_words))}]"
-        text = re.sub(pattern, '', text)
-        text = text.replace('\n', '')
+    def split_text(self, text):
+        pattern = {'en': ',|\.|;|:|?|!|——|\.\.\.|\.\.\.\.\.\.', 'zh-cn': '，|。|；|：|？|！|——|\.\.\.|\.\.\.\.\.\.'}
+        return re.split(pattern[detect(text)], text)
+
+    def clean_text(self, text):
+        text = text.lower()
+
+        text = OpenCC('t2s').convert(text)
+
+        website_pattern = r'(http[s]?://)?(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.[a-zA-Z]{2,}'
+        text = re.sub(website_pattern, '', text)
+
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        text = re.sub(email_pattern, '', text)
+
+        punctuation_pattern = r'[\.\,\;\:\"\'\?\!\(\)\[\]\{\}\\\/\|\+\-\=\_\*\&\%\#\<\>\~\$\·]|[，。、？！；：“”‘’（）【】《》…～—｜]'
+        text = re.sub(punctuation_pattern, '', text)
 
         return text
 
-    def tradition2simplicity(self, text):
-        return OpenCC('t2s').convert(text)
 
-
-class Media:
+class HandleMedia:
     def __init__(self):
         super().__init__()
 
@@ -78,3 +84,5 @@ class Media:
         audio, sample_ratio = librosa.load(in_path, sr=None)
         audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=0.6)
         soundfile.write(out_path, audio, sample_ratio)
+
+

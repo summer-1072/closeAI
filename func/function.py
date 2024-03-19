@@ -1,17 +1,17 @@
 import os
 import re
-from func.tools import *
-from func.doc import *
-from model.openai import *
+from func.doc import HandleText, HandleMedia
+from model.openai import Whisper, GPT
 
 
 class Media2Text:
-    def __init__(self, slice, overlap, media, text, model_size, device):
+    def __init__(self, slice, overlap, model_size, device):
         super().__init__()
         self.slice = slice
         self.overlap = overlap
-        self.media = media
-        self.text = text
+
+        self.Htext = HandleText()
+        self.Hmedia = HandleMedia()
         self.whisper = Whisper(model_size, device)
 
     def audio2text(self, audio_path):
@@ -21,8 +21,8 @@ class Media2Text:
         audio_folder = os.path.join(folder, audio_name)
         os.makedirs(audio_folder, exist_ok=True)
 
-        self.media.reduce_noise(audio_path, dec_audio_path)
-        self.media.slice_audio(dec_audio_path, audio_folder, self.slice, self.overlap)
+        self.Hmedia.reduce_noise(audio_path, dec_audio_path)
+        self.Hmedia.slice_audio(dec_audio_path, audio_folder, self.slice, self.overlap)
 
         sentences = []
         files = sorted([x for x in os.listdir(audio_folder) if x.endswith('.mp3')])
@@ -34,9 +34,8 @@ class Media2Text:
             else:
                 sentences.extend(fragments[1:])
 
-        sentences = [sen.lower() for sen in sentences]
-        sentences = [self.text.tradition2simplicity(sen) for sen in sentences]
-        sentences = [re.sub(re.compile(r'[^\w\s]+|[\u3000-\u303f\ufb00-\ufffd]'), '', sen) for sen in sentences]
+        sentences = [self.Htext.clean_text(sen) for sen in sentences]
+        sentences = [sen for sen in sentences if sen]
 
         idxs = []
         size = len(sentences)
@@ -59,6 +58,30 @@ class Media2Text:
         folder, video = os.path.split(video_path)
         video_name = os.path.splitext(video)[0]
         audio_path = os.path.join(folder, video_name + '.mp3')
-        self.media.video2audio(video_path, audio_path)
+        self.Hmedia.video2audio(video_path, audio_path)
 
         return self.audio2text(audio_path)
+
+
+class Doc2Text:
+    def __init__(self):
+        super().__init__()
+        self.Htext = HandleText()
+
+    def __call__(self, file_path):
+        text = self.Htext.read_text(file_path)
+        sentences = self.Htext.split_text(text)
+        sentences = [self.Htext.clean_text(sen) for sen in sentences]
+        sentences = [sen for sen in sentences if sen]
+
+        return ', '.join(sentences) + '.'
+
+import time
+
+start = time.time()
+media2text = Media2Text(30000, 6000, 'medium', 'cuda')
+text = media2text.video2text('/home/uto/demo/demo.mp4')
+end = time.time()
+
+print(end - start)
+print(text)
