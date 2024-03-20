@@ -51,8 +51,8 @@ class HandleText:
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         text = re.sub(email_pattern, '', text)
 
-        punctuation_pattern = r'[\.\,\;\:\"\'\?\!\(\)\[\]\{\}\\\/\|\+\-\=\_\*\&\%\#\<\>\~\$\·]|[，。、？！；：“”‘’（）【】《》…～—｜]'
-        text = re.sub(punctuation_pattern, '', text)
+        mark_pattern = r'[\.\,\;\:\"\'\?\!\(\)\[\]\{\}\\\/\|\+\-\=\_\*\&\%\#\<\>\~\$\·]|[，。、？！；：“”‘’（）【】《》…～—｜]'
+        text = re.sub(mark_pattern, '', text)
 
         return text
 
@@ -84,5 +84,3 @@ class HandleMedia:
         audio, sample_ratio = librosa.load(in_path, sr=None)
         audio = noisereduce.reduce_noise(audio, sample_ratio, prop_decrease=0.6)
         soundfile.write(out_path, audio, sample_ratio)
-
-
