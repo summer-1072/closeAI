@@ -14,7 +14,7 @@ class Whisper:
 
         fragments = []
         for segment in segments:
-            fragments.append(segment['text'])
+            fragments.append([[segment['start'], segment['end']], segment['text']])
 
         return language, fragments
 
@@ -29,5 +29,4 @@ class GPT:
         response = self.client.completions.create(
             model=model_name,
             prompt=prompt,
-            # messages
         )

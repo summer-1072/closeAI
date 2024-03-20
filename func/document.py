@@ -6,7 +6,6 @@ import noisereduce
 from docx import Document
 from opencc import OpenCC
 from moviepy.editor import *
-from langdetect import detect
 from pydub import AudioSegment
 
 
@@ -36,23 +35,27 @@ class HandleText:
 
         return text
 
-    def split_text(self, text):
-        pattern = {'en': ',|\.|;|:|?|!|——|\.\.\.|\.\.\.\.\.\.', 'zh-cn': '，|。|；|：|？|！|——|\.\.\.|\.\.\.\.\.\.'}
-        return re.split(pattern[detect(text)], text)
-
-    def clean_text(self, text):
+    def prep_text(self, text):
         text = text.lower()
 
         text = OpenCC('t2s').convert(text)
 
-        website_pattern = r'(http[s]?://)?(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.[a-zA-Z]{2,}'
-        text = re.sub(website_pattern, '', text)
+        web_pattern = r'\b(?:https?://)?(?:www\.)?[-a-zA-Z0-9.]+(?:\.[a-zA-Z]+)+(?:/[-a-zA-Z0-9_/]*)?\b'
+        text = re.sub(web_pattern, '', text)
 
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z0-9]+\b'
         text = re.sub(email_pattern, '', text)
 
-        mark_pattern = r'[\.\,\;\:\"\'\?\!\(\)\[\]\{\}\\\/\|\+\-\=\_\*\&\%\#\<\>\~\$\·]|[，。、？！；：“”‘’（）【】《》…～—｜]'
-        text = re.sub(mark_pattern, '', text)
+        return text
+
+    def split_text(self, text):
+        pattern = ',|\.|;|:|\?|!|，|。|；|：|？|！|、|——|\.\.\.|\.\.\.\.\.\.'
+
+        return re.split(pattern, text)
+
+    def clean_mark(self, text):
+        pattern = r'[\.\,\;\:\"\'\?\!\(\)\[\]\{\}\\\/\|\+\-\=\_\*\&\%\#\<\>\~\$\·\r?\n]|[，。、？！；：“”‘’（）【】《》…～—｜]'
+        text = re.sub(pattern, '', text)
 
         return text
 

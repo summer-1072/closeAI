@@ -26,19 +26,20 @@ class Media2Text:
 
         sentences = []
         files = sorted([x for x in os.listdir(audio_folder) if x.endswith('.mp3')])
-        for i in range(len(files)):
-            language, fragments = self.whisper(os.path.join(audio_folder, files[i]))
+        for i, file in enumerate(files):
+            language, fragments = self.whisper(os.path.join(audio_folder, file))
+
             if i == 0:
-                sentences.extend(fragments[:-1])
-
+                sentences.extend([fragment[1] for fragment in fragments][:-1])
             else:
-                sentences.extend(fragments[1:])
+                sentences.extend([fragment[1] for fragment in fragments][1:])
 
-        sentences = [self.Htext.clean_text(sen) for sen in sentences]
+        sentences = [self.Htext.prep_text(sen) for sen in sentences]
+        sentences = [self.Htext.split_text(sen) for sen in sentences]
+        sentences = [self.Htext.clean_mark(sen) for sentence in sentences for sen in sentence]
         sentences = [sen for sen in sentences if sen]
 
-        idxs = []
-        idx = 0
+        idx, idxs = 0, []
         num = len(sentences)
         while idx < num:
             sen_front = sentences[idx]
@@ -46,17 +47,13 @@ class Media2Text:
             for inc, sen_back in enumerate(sentences[idx + 1:idx + 10]):
                 sen_back = re.findall(r'[A-Za-z]+|[\u4e00-\u9fff]', sen_back)
 
-                if len(sen_front) > len(sen_back):
-                    if max([[sen_front[i + j] == sen_back[j] for j in range(len(sen_back))].count(True) for i in
-                            range(len(sen_front) - len(sen_back) + 1)]) / len(sen_back) > 0.8:
-                        idxs.extend([i for i in range(idx + 1, idx + 1 + inc + 1)])
-                        idx += inc + 1
+                inter = [idx, idx + inc + 1] if len(sen_front) <= len(sen_back) else [idx + 1, idx + 1 + inc + 1]
+                sen_min, sen_max = (sen_front, sen_back) if len(sen_front) <= len(sen_back) else (sen_back, sen_front)
 
-                else:
-                    if max([[sen_front[j] == sen_back[i + j] for j in range(len(sen_front))].count(True) for i in
-                            range(len(sen_back) - len(sen_front) + 1)]) / len(sen_front) > 0.8:
-                        idxs.extend([i for i in range(idx, idx + inc + 1)])
-                        idx += inc + 1
+                if max([[sen_min[j] == sen_max[i + j] for j in range(len(sen_min))].count(True) for i in
+                        range(len(sen_max) - len(sen_min) + 1)]) / len(sen_min) > 0.8:
+                    idxs.extend([i for i in range(inter[0], inter[1])])
+                    idx += inc + 1
 
             idx += 1
         for idx in sorted(idxs, reverse=True):
@@ -80,19 +77,9 @@ class Doc2Text:
 
     def __call__(self, file_path):
         text = self.Htext.read_text(file_path)
+        text = self.Htext.prep_text(text)
         sentences = self.Htext.split_text(text)
-        sentences = [self.Htext.clean_text(sen) for sen in sentences]
-        sentences = [sen for sen in sentences if sen]
+        sentences = [self.Htext.clean_mark(sentence) for sentence in sentences]
+        sentences = [sentence for sentence in sentences if sentence]
 
         return ', '.join(sentences) + '.'
-
-
-import time
-
-start = time.time()
-media2text = Media2Text(30000, 6000, 'medium', 'cuda')
-text = media2text.video2text('/D/project/data/mp4/demo.mp4')
-end = time.time()
-
-print(end - start)
-print(text)
